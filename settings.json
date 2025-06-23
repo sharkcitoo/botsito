@@ -2,25 +2,25 @@
   "bot-account": {
     "username": "BOTSITO_SHARK",
     "password": "",
-    "type": "mojang"
+    "type": "offline"
   },
 
   "server": {
-    "ip": "SharkLandia.aternos.me",
-    "port": 15067,
+    "ip": "omegasharkland.aternos.me",
+    "port": 63466,
     "version": "1.18.2"
   },
 
   "position": {
-    "enabled": false,
-    "x": 0,
-    "y": 0,
+    "enabled": true,
+    "x": 60,
+    "y": 50,
     "z": 0
   },
 
   "utils": {
     "auto-auth": {
-      "enabled": false,
+      "enabled": true,
       "password": "12345678"
     },
 
