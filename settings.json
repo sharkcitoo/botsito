@@ -35,7 +35,8 @@
       "repeat-delay": 480,
 
       "messages": [
-        "/gamemode creative",
+        "/login megabot",
+        # "/gamemode creative",
         "Sigan a EFRAA SHARK en Instagram Porfavor :) https://www.instagram.com/efraa.shark/",
         "Suscribanse a EFRAA SHARK en Youtube Porfavor :) https://www.youtube.com/@efraashark",
         "No te olvides de seguir a EFRAA SHARK en Twitch https://www.twitch.tv/efraa_shark",
