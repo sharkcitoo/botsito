@@ -32,12 +32,12 @@
     "chat-messages": {
       "enabled": true,
       "repeat": true,
-      "repeat-delay": 480,
+      "repeat-delay": 300,
 
       "messages": [
         "/login megabot",
-        "Sigan a EFRAA SHARK en Instagram Porfavor :) https://www.instagram.com/efraa.shark/",
-        "Suscribanse a EFRAA SHARK en Youtube Porfavor :) https://www.youtube.com/@efraashark",
+        "Sígue al Efra en Instagram https://www.instagram.com/efraa.shark/",
+        "Suscríbete al canal de YouTube https://www.youtube.com/@efraashark",
         "No te olvides de seguir a EFRAA SHARK en Twitch https://www.twitch.tv/efraa_shark",
         "Recuerda entrar al canal de discord para no perderte de nada https://discord.gg/cjnYbXkDQw",
         "AYUDA el efra me tiene secuestrado en el sotano y me obliga a mandar esos mensajes ayudaaaa"
