@@ -1,7 +1,12 @@
 {
   "bot-account": {
     "username": "BOTSITO_SHARK",
-    "password": "",
+    "password": "tiburoncin",
+    "type": "offline"
+  },
+  "bot-op-account": {
+    "username": "SHARKSITO",
+    "password": "tiburoncin",
     "type": "offline"
   },
 
@@ -10,6 +15,7 @@
     "port": 63466,
     "version": "1.18.2"
   },
+
 
   "position": {
     "enabled": false,
