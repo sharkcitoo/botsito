@@ -101,8 +101,8 @@ function createBot() {
       });
    }
 
-   // Safe handling of kick reason
-   bot.on('kicked', (reason) => {
+   // Detecta kick y si fue ban, desbanea y reconecta
+   bot.on('kicked', async (reason) => {
       let reasonText = '';
 
       try {
@@ -122,10 +122,52 @@ function createBot() {
       }
 
       logger.warn(`Bot was kicked from the server. Reason: ${reasonText}`);
+
+      if (reasonText.toLowerCase().includes('ban')) {
+         logger.warn('Bot fue baneado, intentando desbanear...');
+
+         try {
+           await desbanearBot();
+           logger.info('Desbaneado exitosamente, reconectando bot principal...');
+         } catch (err) {
+           logger.error('Error al desbanear: ' + err.message);
+         }
+
+         setTimeout(() => {
+            createBot();
+         }, 5000);
+      }
    });
 
    bot.on('error', (err) => {
       logger.error(`Error: ${err.message}`);
+   });
+}
+
+// Bot operador que manda el /pardon para desbanear
+async function desbanearBot() {
+   return new Promise((resolve, reject) => {
+      const botOp = mineflayer.createBot({
+         username: config['bot-op-account']['username'],  // Configura otro usuario con OP
+         password: config['bot-op-account']['password'],
+         auth: config['bot-op-account']['type'],
+         host: config.server.ip,
+         port: config.server.port,
+         version: config.server.version,
+      });
+
+      botOp.once('spawn', () => {
+         logger.info('Bot OP conectado para desbanear');
+         botOp.chat(`/pardon ${config['bot-account']['username']}`);
+         logger.info('Comando /pardon enviado');
+         botOp.quit();
+         resolve();
+      });
+
+      botOp.on('error', (err) => {
+         logger.error('Error en bot OP: ' + err.message);
+         reject(err);
+      });
    });
 }
 
