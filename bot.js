@@ -4,11 +4,12 @@ const pathfinder = require('mineflayer-pathfinder').pathfinder;
 const { GoalBlock } = require('mineflayer-pathfinder').goals;
 
 const config = require('./settings.json');
-
 const loggers = require('./logging.js');
 const logger = loggers.logger;
-
 const keep_alive = require('./keep_alive.js');
+
+// 🔧 ESTA LÍNEA FALTABA
+const { spawn } = require('child_process');
 
 function createBot() {
    const bot = mineflayer.createBot({
@@ -31,7 +32,6 @@ function createBot() {
       // Auto-auth module
       if (config.utils['auto-auth'].enabled) {
          logger.info('Started auto-auth module');
-
          const password = config.utils['auto-auth'].password;
          setTimeout(() => {
             bot.chat(`/register ${password} ${password}`);
@@ -122,10 +122,11 @@ function createBot() {
       }
 
       logger.warn(`Bot was kicked from the server. Reason: ${reasonText}`);
+
       // Lanzar bot operador para hacer el /pardon
-   spawn('node', ['operador.js'], {
-      stdio: 'inherit',
-   
+      spawn('node', ['operador.js'], {
+         stdio: 'inherit',
+      });
    });
 
    bot.on('error', (err) => {
@@ -133,4 +134,5 @@ function createBot() {
    });
 }
 
+// ✅ ESTA LÍNEA YA ESTABA CORRECTA
 createBot();
