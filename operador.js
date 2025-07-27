@@ -3,7 +3,7 @@ const config = require('./settingsss.json'); // Usa un config aparte si quieres
 const operador = mineflayer.createBot({
    host: config.server.ip,
    port: config.server.port,
-   username: 'OperadorBot',
+   username: 'SHARKCITO',
    auth: 'offline', // o 'offline' según el servidor
    version: config.server.version
 });
