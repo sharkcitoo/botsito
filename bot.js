@@ -5,11 +5,6 @@ const { GoalBlock } = require('mineflayer-pathfinder').goals;
 
 const config = require('./settings.json');
 
-const loggers = require('./logging.js');
-const logger = loggers.logger;
-
-const keep_alive = require('./keep_alive.js');
-
 function createBot() {
    const bot = mineflayer.createBot({
       username: config['bot-account']['username'],
@@ -26,29 +21,22 @@ function createBot() {
    bot.settings.colorsEnabled = false;
 
    bot.once('spawn', () => {
-      logger.info("Bot joined to the server");
+      console.log("Bot joined to the server");
 
-      // Auto-auth module
       if (config.utils['auto-auth'].enabled) {
-         logger.info('Started auto-auth module');
-
+         console.log('Auto-auth module active');
          const password = config.utils['auto-auth'].password;
          setTimeout(() => {
             bot.chat(`/register ${password} ${password}`);
             bot.chat(`/login ${password}`);
-            logger.info('Authentication commands executed');
          }, 500);
       }
 
-      // Chat messages module
       if (config.utils['chat-messages'].enabled) {
-         logger.info('Started chat-messages module');
          const messages = config.utils['chat-messages']['messages'];
-
          if (config.utils['chat-messages'].repeat) {
             const delay = config.utils['chat-messages']['repeat-delay'];
             let i = 0;
-
             setInterval(() => {
                bot.chat(messages[i]);
                i = (i + 1) % messages.length;
@@ -58,97 +46,74 @@ function createBot() {
          }
       }
 
-      // Auto movement
       const pos = config.position;
-      if (config.position.enabled) {
-         logger.info(`Starting moving to target location (${pos.x}, ${pos.y}, ${pos.z})`);
+      if (pos.enabled) {
+         console.log(`Moving to: ${pos.x}, ${pos.y}, ${pos.z}`);
          bot.pathfinder.setMovements(defaultMove);
          bot.pathfinder.setGoal(new GoalBlock(pos.x, pos.y, pos.z));
       }
 
-      // Anti-AFK
       if (config.utils['anti-afk'].enabled) {
-         if (config.utils['anti-afk'].sneak) {
-            bot.setControlState('sneak', true);
-         }
-         if (config.utils['anti-afk'].jump) {
-            bot.setControlState('jump', true);
-         }
+         if (config.utils['anti-afk'].sneak) bot.setControlState('sneak', true);
+         if (config.utils['anti-afk'].jump) bot.setControlState('jump', true);
       }
    });
 
    bot.on('chat', (username, message) => {
       if (config.utils['chat-log']) {
-         logger.info(`<${username}> ${message}`);
+         console.log(`<${username}> ${message}`);
       }
    });
 
    bot.on('goal_reached', () => {
-      logger.info(`Bot arrived to target location. ${bot.entity.position}`);
+      console.log(`Goal reached at ${bot.entity.position}`);
    });
 
    bot.on('death', () => {
-      logger.warn(`Bot died and respawned at ${bot.entity.position}`);
+      console.warn(`Bot died at ${bot.entity.position}`);
    });
 
-   // Auto reconnect
    if (config.utils['auto-reconnect']) {
       bot.on('end', () => {
-         logger.warn('Bot disconnected. Reconnecting...');
-         setTimeout(() => {
-            createBot();
-         }, config.utils['auto-reconnect-delay'] || 10000);
+         console.warn('Bot disconnected. Reconnecting...');
+         setTimeout(createBot, config.utils['auto-reconnect-delay'] || 10000);
       });
    }
 
-   // Detecta kick y si fue ban, desbanea y reconecta
    bot.on('kicked', async (reason) => {
       let reasonText = '';
-
       try {
          const parsed = typeof reason === 'string' ? JSON.parse(reason) : reason;
-
-         if (typeof parsed.text === 'string') {
-            reasonText = parsed.text;
-         } else if (Array.isArray(parsed.extra) && parsed.extra[0]?.text) {
-            reasonText = parsed.extra[0].text;
-         } else {
-            reasonText = JSON.stringify(parsed);
-         }
-
+         reasonText = parsed.text || parsed.extra?.[0]?.text || JSON.stringify(parsed);
          reasonText = reasonText.replace(/§./g, '');
-      } catch (e) {
+      } catch {
          reasonText = typeof reason === 'string' ? reason : JSON.stringify(reason);
       }
 
-      logger.warn(`Bot was kicked from the server. Reason: ${reasonText}`);
+      console.warn(`Bot was kicked. Reason: ${reasonText}`);
 
       if (reasonText.toLowerCase().includes('ban')) {
-         logger.warn('Bot fue baneado, intentando desbanear...');
-
+         console.warn('Bot was banned, trying to unban...');
          try {
-           await desbanearBot();
-           logger.info('Desbaneado exitosamente, reconectando bot principal...');
+            await desbanearBot();
+            console.log('Bot unbanned, reconnecting...');
          } catch (err) {
-           logger.error('Error al desbanear: ' + err.message);
+            console.error('Error unbanning bot: ' + err.message);
          }
 
-         setTimeout(() => {
-            createBot();
-         }, 5000);
+         setTimeout(createBot, 5000);
       }
    });
 
    bot.on('error', (err) => {
-      logger.error(`Error: ${err.message}`);
+      console.error(`Bot error: ${err.message}`);
    });
 }
 
-// Bot operador que manda el /pardon para desbanear
 async function desbanearBot() {
    return new Promise((resolve, reject) => {
       const botOp = mineflayer.createBot({
-         username: config['bot-op-account']['username'],  // Configura otro usuario con OP
+         username: config['bot-op-account']['username'],
          password: config['bot-op-account']['password'],
          auth: config['bot-op-account']['type'],
          host: config.server.ip,
@@ -157,15 +122,14 @@ async function desbanearBot() {
       });
 
       botOp.once('spawn', () => {
-         logger.info('Bot OP conectado para desbanear');
+         console.log('Bot OP connected to unban');
          botOp.chat(`/pardon ${config['bot-account']['username']}`);
-         logger.info('Comando /pardon enviado');
          botOp.quit();
          resolve();
       });
 
       botOp.on('error', (err) => {
-         logger.error('Error en bot OP: ' + err.message);
+         console.error('Bot OP error: ' + err.message);
          reject(err);
       });
    });
