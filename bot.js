@@ -5,6 +5,11 @@ const { GoalBlock } = require('mineflayer-pathfinder').goals;
 
 const config = require('./settings.json');
 
+const loggers = require('./logging.js');
+const logger = loggers.logger;
+
+const keep_alive = require('./keep_alive.js');
+
 function createBot() {
    const bot = mineflayer.createBot({
       username: config['bot-account']['username'],
@@ -21,22 +26,29 @@ function createBot() {
    bot.settings.colorsEnabled = false;
 
    bot.once('spawn', () => {
-      console.log("Bot joined to the server");
+      logger.info("Bot joined to the server");
 
+      // Auto-auth module
       if (config.utils['auto-auth'].enabled) {
-         console.log('Auto-auth module active');
+         logger.info('Started auto-auth module');
+
          const password = config.utils['auto-auth'].password;
          setTimeout(() => {
             bot.chat(`/register ${password} ${password}`);
             bot.chat(`/login ${password}`);
+            logger.info('Authentication commands executed');
          }, 500);
       }
 
+      // Chat messages module
       if (config.utils['chat-messages'].enabled) {
+         logger.info('Started chat-messages module');
          const messages = config.utils['chat-messages']['messages'];
+
          if (config.utils['chat-messages'].repeat) {
             const delay = config.utils['chat-messages']['repeat-delay'];
             let i = 0;
+
             setInterval(() => {
                bot.chat(messages[i]);
                i = (i + 1) % messages.length;
@@ -46,92 +58,74 @@ function createBot() {
          }
       }
 
+      // Auto movement
       const pos = config.position;
-      if (pos.enabled) {
-         console.log(`Moving to: ${pos.x}, ${pos.y}, ${pos.z}`);
+      if (config.position.enabled) {
+         logger.info(`Starting moving to target location (${pos.x}, ${pos.y}, ${pos.z})`);
          bot.pathfinder.setMovements(defaultMove);
          bot.pathfinder.setGoal(new GoalBlock(pos.x, pos.y, pos.z));
       }
 
+      // Anti-AFK
       if (config.utils['anti-afk'].enabled) {
-         if (config.utils['anti-afk'].sneak) bot.setControlState('sneak', true);
-         if (config.utils['anti-afk'].jump) bot.setControlState('jump', true);
+         if (config.utils['anti-afk'].sneak) {
+            bot.setControlState('sneak', true);
+         }
+         if (config.utils['anti-afk'].jump) {
+            bot.setControlState('jump', true);
+         }
       }
    });
 
    bot.on('chat', (username, message) => {
       if (config.utils['chat-log']) {
-         console.log(`<${username}> ${message}`);
+         logger.info(`<${username}> ${message}`);
       }
    });
 
    bot.on('goal_reached', () => {
-      console.log(`Goal reached at ${bot.entity.position}`);
+      logger.info(`Bot arrived to target location. ${bot.entity.position}`);
    });
 
    bot.on('death', () => {
-      console.warn(`Bot died at ${bot.entity.position}`);
+      logger.warn(`Bot died and respawned at ${bot.entity.position}`);
    });
 
+   // Auto reconnect
    if (config.utils['auto-reconnect']) {
       bot.on('end', () => {
-         console.warn('Bot disconnected. Reconnecting...');
-         setTimeout(createBot, config.utils['auto-reconnect-delay'] || 10000);
+         logger.warn('Bot disconnected. Reconnecting...');
+         setTimeout(() => {
+            createBot();
+         }, config.utils['auto-reconnect-delay'] || 10000);
       });
    }
 
-   bot.on('kicked', async (reason) => {
+   // Safe handling of kick reason
+   bot.on('kicked', (reason) => {
       let reasonText = '';
+
       try {
          const parsed = typeof reason === 'string' ? JSON.parse(reason) : reason;
-         reasonText = parsed.text || parsed.extra?.[0]?.text || JSON.stringify(parsed);
+
+         if (typeof parsed.text === 'string') {
+            reasonText = parsed.text;
+         } else if (Array.isArray(parsed.extra) && parsed.extra[0]?.text) {
+            reasonText = parsed.extra[0].text;
+         } else {
+            reasonText = JSON.stringify(parsed);
+         }
+
          reasonText = reasonText.replace(/§./g, '');
-      } catch {
+      } catch (e) {
          reasonText = typeof reason === 'string' ? reason : JSON.stringify(reason);
       }
 
-      console.warn(`Bot was kicked. Reason: ${reasonText}`);
-
-      if (reasonText.toLowerCase().includes('ban')) {
-         console.warn('Bot was banned, trying to unban...');
-         try {
-            await desbanearBot();
-            console.log('Bot unbanned, reconnecting...');
-         } catch (err) {
-            console.error('Error unbanning bot: ' + err.message);
-         }
-
-         setTimeout(createBot, 5000);
-      }
+      logger.warn(`Bot was kicked from the server. Reason: ${reasonText}`);
    });
 
    bot.on('error', (err) => {
-      console.error(`Bot error: ${err.message}`);
-   });
-}
-
-async function desbanearBot() {
-   return new Promise((resolve, reject) => {
-      const botOp = mineflayer.createBot({
-         username: config['bot-op-account']['username'],
-         password: config['bot-op-account']['password'],
-         auth: config['bot-op-account']['type'],
-         host: config.server.ip,
-         port: config.server.port,
-         version: config.server.version,
-      });
-
-      botOp.once('spawn', () => {
-         console.log('Bot OP connected to unban');
-         botOp.chat(`/pardon ${config['bot-account']['username']}`);
-         botOp.quit();
-         resolve();
-      });
-
-      botOp.on('error', (err) => {
-         console.error('Bot OP error: ' + err.message);
-         reject(err);
-      });
+      logger.error(`Error: ${err.message}`);
    });
 }
 
