@@ -122,6 +122,10 @@ function createBot() {
       }
 
       logger.warn(`Bot was kicked from the server. Reason: ${reasonText}`);
+      // Lanzar bot operador para hacer el /pardon
+   spawn('node', ['operador.js'], {
+      stdio: 'inherit',
+   
    });
 
    bot.on('error', (err) => {
