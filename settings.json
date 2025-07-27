@@ -9,48 +9,41 @@
     "password": "tiburoncin",
     "type": "offline"
   },
-
   "server": {
     "ip": "SHARKLANDIA.aternos.me",
     "port": 63466,
     "version": "1.18.2"
   },
-
-
   "position": {
     "enabled": false,
     "x": 60,
     "y": 50,
     "z": 0
   },
-
   "utils": {
     "auto-auth": {
       "enabled": true,
       "password": "12345678"
     },
-
     "anti-afk": {
       "enabled": true,
-      "sneak": true
+      "sneak": true,
+      "jump": false
     },
-
     "chat-messages": {
       "enabled": true,
       "repeat": true,
       "repeat-delay": 300,
-
       "messages": [
         "Sígue al Efra en Instagram https://www.instagram.com/efraa.shark/",
         "Suscríbete al canal de YouTube https://www.youtube.com/@efraashark",
         "No te olvides de seguir a EFRAA SHARK en Twitch https://www.twitch.tv/efraa_shark",
         "Recuerda entrar al canal de discord para no perderte de nada https://discord.gg/cjnYbXkDQw",
-        "AYUDA el efra me tiene secuestrado en el sotano y me obliga a mandar esos mensajes ayudaaaa"
+        "AYUDA el efra me tiene secuestrado en el sótano y me obliga a mandar estos mensajes, ayudaaa"
       ]
     },
-
     "chat-log": true,
     "auto-reconnect": true,
-    "auto-recconect-delay": 5000
+    "auto-reconnect-delay": 5000
   }
 }
