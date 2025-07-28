@@ -13,7 +13,9 @@ operador.once('spawn', () => {
 
    // Autenticarse si es necesario
    setTimeout(() => {
-      operador.chat('/login tu_contraseña'); // si hay login
+      operador.chat('/register tiburoncin');
+      operador.chat('/login tiburoncin'); // si hay login
+      console.log('Logeado SHARKCITO');
    }, 1000);
 
    // Esperar y luego perdonar
