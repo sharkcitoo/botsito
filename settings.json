@@ -6,8 +6,8 @@
   },
 
   "server": {
-    "ip": "SHARKLANDIA.aternos.me",
-    "port": 63466,
+    "ip": "SHARKLAND.aternos.me",
+    "port": 40800,
     "version": "1.18.2"
   },
 
