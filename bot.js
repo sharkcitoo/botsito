@@ -7,9 +7,32 @@ const config = require('./settings.json');
 const loggers = require('./logging.js');
 const logger = loggers.logger;
 const keep_alive = require('./keep_alive.js');
-
-// 🔧 ESTA LÍNEA FALTABA
 const { spawn } = require('child_process');
+
+// 🕒 Obtener hora actual como string (formato 24h)
+function getTimeString() {
+   const now = new Date();
+   return now.toLocaleTimeString('en-US', { hour12: false, timeZone: 'America/Mexico_City' }); // ajusta si no estás en CDMX
+}
+
+// 🚫 Evitar reconectar entre 19:00 y 19:10
+function shouldReconnect() {
+   const now = new Date();
+   const h = now.getHours();
+   const m = now.getMinutes();
+   return !(h === 19 && m < 10);
+}
+
+// ⏱ Desconectar automáticamente a las 19:00
+function autoDisconnectBot(bot) {
+   setInterval(() => {
+      const time = getTimeString();
+      if (time >= "19:00:00" && time <= "19:10:00") {
+         console.log(`[${time}] Desconectando bot para evitar detección por Aternos.`);
+         bot.quit('Desconexión diaria programada');
+      }
+   }, 60 * 1000); // revisar cada minuto
+}
 
 function createBot() {
    const bot = mineflayer.createBot({
@@ -40,7 +63,7 @@ function createBot() {
          }, 500);
       }
 
-      // Chat messages module
+      // Chat messages
       if (config.utils['chat-messages'].enabled) {
          logger.info('Started chat-messages module');
          const messages = config.utils['chat-messages']['messages'];
@@ -61,20 +84,19 @@ function createBot() {
       // Auto movement
       const pos = config.position;
       if (config.position.enabled) {
-         logger.info(`Starting moving to target location (${pos.x}, ${pos.y}, ${pos.z})`);
+         logger.info(`Moving to target location (${pos.x}, ${pos.y}, ${pos.z})`);
          bot.pathfinder.setMovements(defaultMove);
          bot.pathfinder.setGoal(new GoalBlock(pos.x, pos.y, pos.z));
       }
 
       // Anti-AFK
       if (config.utils['anti-afk'].enabled) {
-         if (config.utils['anti-afk'].sneak) {
-            bot.setControlState('sneak', true);
-         }
-         if (config.utils['anti-afk'].jump) {
-            bot.setControlState('jump', true);
-         }
+         if (config.utils['anti-afk'].sneak) bot.setControlState('sneak', true);
+         if (config.utils['anti-afk'].jump) bot.setControlState('jump', true);
       }
+
+      // Activar auto-desconexión diaria
+      autoDisconnectBot(bot);
    });
 
    bot.on('chat', (username, message) => {
@@ -84,7 +106,7 @@ function createBot() {
    });
 
    bot.on('goal_reached', () => {
-      logger.info(`Bot arrived to target location. ${bot.entity.position}`);
+      logger.info(`Bot arrived at ${bot.entity.position}`);
    });
 
    bot.on('death', () => {
@@ -96,37 +118,30 @@ function createBot() {
       bot.on('end', () => {
          logger.warn('Bot disconnected. Reconnecting...');
          setTimeout(() => {
-            createBot();
+            if (shouldReconnect()) {
+               createBot();
+            } else {
+               logger.warn('Reconexión bloqueada por horario de apagado diario.');
+            }
          }, config.utils['auto-reconnect-delay'] || 10000);
       });
    }
 
-   // Safe handling of kick reason
    bot.on('kicked', (reason) => {
       let reasonText = '';
-
       try {
          const parsed = typeof reason === 'string' ? JSON.parse(reason) : reason;
-
-         if (typeof parsed.text === 'string') {
-            reasonText = parsed.text;
-         } else if (Array.isArray(parsed.extra) && parsed.extra[0]?.text) {
-            reasonText = parsed.extra[0].text;
-         } else {
-            reasonText = JSON.stringify(parsed);
-         }
+         if (typeof parsed.text === 'string') reasonText = parsed.text;
+         else if (Array.isArray(parsed.extra) && parsed.extra[0]?.text) reasonText = parsed.extra[0].text;
+         else reasonText = JSON.stringify(parsed);
 
          reasonText = reasonText.replace(/§./g, '');
       } catch (e) {
          reasonText = typeof reason === 'string' ? reason : JSON.stringify(reason);
       }
 
-      logger.warn(`Bot was kicked from the server. Reason: ${reasonText}`);
-
-      // Lanzar bot operador para hacer el /pardon
-      spawn('node', ['operador.js'], {
-         stdio: 'inherit',
-      });
+      logger.warn(`Bot was kicked. Reason: ${reasonText}`);
+      spawn('node', ['operador.js'], { stdio: 'inherit' });
    });
 
    bot.on('error', (err) => {
@@ -134,5 +149,4 @@ function createBot() {
    });
 }
 
-// ✅ ESTA LÍNEA YA ESTABA CORRECTA
 createBot();
