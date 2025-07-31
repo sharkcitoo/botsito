@@ -20,7 +20,7 @@ operador.once('spawn', () => {
 
    // Esperar y luego perdonar
    setTimeout(() => {
-      operador.chat('/pardon BOTSITO_SHARK');
+      operador.chat('/pardon VOTSITO_SHARK');
       console.log('Comando /pardon enviado');
 
       setTimeout(() => {
