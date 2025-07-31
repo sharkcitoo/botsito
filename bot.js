@@ -12,7 +12,7 @@ const { spawn } = require('child_process');
 // 🕒 Obtener hora actual como string (formato 24h)
 function getTimeString() {
    const now = new Date();
-   return now.toLocaleTimeString('en-US', { hour12: false, timeZone: 'America/Mexico_City' }); // ajusta si no estás en CDMX
+   return now.toLocaleTimeString('en-US', { hour12: false, timeZone: 'America/Mexico_City' });
 }
 
 // 🚫 Evitar reconectar entre 19:00 y 19:10
@@ -23,7 +23,7 @@ function shouldReconnect() {
    return !(h === 19 && m < 10);
 }
 
-// ⏱ Desconectar automáticamente a las 19:00
+// ⏱ Desconectar automáticamente a las 19:00 (opcional, puedes comentar si no lo usas)
 function autoDisconnectBot(bot) {
    setInterval(() => {
       const time = getTimeString();
@@ -32,6 +32,21 @@ function autoDisconnectBot(bot) {
          bot.quit('Desconexión diaria programada');
       }
    }, 60 * 1000); // revisar cada minuto
+}
+
+// 🔁 Ciclo automático de reconexión cada 12 horas
+function scheduleAutoRestart(bot) {
+   setTimeout(() => {
+      const time = getTimeString();
+      logger.warn(`[${time}] Desconectando bot por ciclo de 12h para evitar detección`);
+      bot.chat('⏰ Me desconecto 10 minutos para evitar baneo por Aternos');
+      bot.quit('Desconexión programada cada 12h');
+
+      setTimeout(() => {
+         logger.info(`[${getTimeString()}] Reconectando bot tras 10 minutos de descanso`);
+         createBot();
+      }, 10 * 60 * 1000); // 10 minutos
+   }, 12 * 60 * 60 * 1000); // 12 horas
 }
 
 function createBot() {
@@ -95,8 +110,11 @@ function createBot() {
          if (config.utils['anti-afk'].jump) bot.setControlState('jump', true);
       }
 
-      // Activar auto-desconexión diaria
+      // Activar auto-desconexión diaria opcional
       autoDisconnectBot(bot);
+
+      // Activar ciclo de 12h de desconexión/reconexión
+      scheduleAutoRestart(bot);
    });
 
    bot.on('chat', (username, message) => {
@@ -150,3 +168,4 @@ function createBot() {
 }
 
 createBot();
+
